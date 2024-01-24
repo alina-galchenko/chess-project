@@ -1,7 +1,7 @@
 import chess
 import chess.pgn
 import bz2
-import sqlite3
+import sqlite3 #not used yet
 import requests
 import wget
 import os
