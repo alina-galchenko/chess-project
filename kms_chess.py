@@ -67,3 +67,35 @@ def games_generator(folder = "games"):
                         yield game
                     pgn = ""
                 pgn += line
+def SetDatabase(details):
+    # details1 = []
+    # for i in range(202): details1 += details
+    DF = pandas.DataFrame(details, columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
+    DF.to_csv("database13.csv", index= False)
+    for (piece_name, p) in [("pawn", "p"), ("knight", "n"), ("bishop", "b"), ("rook", "r"), ("queen", "q")]:
+        DF[f"{piece_name}_difference"] = DF[p.upper()] - DF[p]
+    piece_types = [("pawn", "p"), ("knight", "n"), ("bishop", "b"), ("rook", "r"), ("queen", "q")]
+    OUTPUT = DF[DF.Move == (details_i[len(details_i)-1][5] for details_i in details)][[f"{p}_difference" for (p, _) in piece_types]]
+    return OUTPUT
+
+def PieceImbalanceValue(game_type, piece_losses, colour, piece, imbalance, ELO_range):
+
+    return 0
+
+#download_game_files()
+#SetDatabase(details).to_csv("imbalance.csv", index= False)
+#print(SetDatabase(details))
+
+
+gameGen = games_generator()
+allDetails = []
+for game in gameGen:
+    game_length_half = len(get_details_from_game(game,75,0))
+    game_length_ply = 0
+    if game_length_half % 2 == 0: game_length_ply = game_length_half//2
+    else: game_length_ply = game_length_half//2 + 1
+    details = get_details_from_game(game,round(game_length_ply*0.6),6)
+    allDetails += details
+    if len(allDetails) % 1000 == 0: print("processed: ", len(allDetails))
+
+print(SetDatabase(allDetails))
