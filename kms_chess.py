@@ -2,6 +2,8 @@ import chess
 import chess.pgn
 import bz2
 import sqlite3 #not used yet
+
+import pandas
 import requests
 import wget
 import os
@@ -13,6 +15,7 @@ import collections
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+
 
 PIECE_SYMBOLS = [chess.Piece.from_symbol(p) for p in "pnbrqPNBRQ"]
 
@@ -67,20 +70,52 @@ def games_generator(folder = "games"):
                         yield game
                     pgn = ""
                 pgn += line
-def SetDatabase(details):
-    # details1 = []
-    # for i in range(202): details1 += details
-    DF = pandas.DataFrame(details, columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
-    DF.to_csv("database13.csv", index= False)
-    for (piece_name, p) in [("pawn", "p"), ("knight", "n"), ("bishop", "b"), ("rook", "r"), ("queen", "q")]:
-        DF[f"{piece_name}_difference"] = DF[p.upper()] - DF[p]
+
+def SetDatabase(allDetails):
+    DF = pandas.DataFrame(sum(allDetails, []), columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
+    # DF.to_csv("database13.csv", index= False)
+    #Piece_Imbalance(DF, details)
+    return DF
+
+def Piece_Imbalance(allDetails):
+    df = pandas.DataFrame([details[len(details)-1] for details in allDetails if len(details) > 0], columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
     piece_types = [("pawn", "p"), ("knight", "n"), ("bishop", "b"), ("rook", "r"), ("queen", "q")]
-    OUTPUT = DF[DF.Move == (details_i[len(details_i)-1][5] for details_i in details)][[f"{p}_difference" for (p, _) in piece_types]]
-    return OUTPUT
+    for (piece_name, p) in piece_types:
+        df[f"{piece_name}_difference"] = df[p.upper()] - df[p]
+    #OUTPUT = DF[DF.Move == (details[len(details)-1][5] for details in AllDetails)][[f"{p}_difference" for (p, _) in piece_types]]
+    out = df[["Event", "Result", "WhiteElo", "BlackElo"]+[f"{p}_difference" for (p, _) in piece_types]]
+    out.to_csv("database13_diff.csv", index=False)
+    return out
 
-def PieceImbalanceValue(game_type, piece_losses, colour, piece, imbalance, ELO_range):
-
-    return 0
+def PieceImbalanceValue(dfDifference, game_type, colour, piece, ELO_range):
+    MIN_ELO = 0
+    MAX_ELO = 1
+    # ELO_range indices
+    df_filtered = dfDifference[(dfDifference.Event.str.contains(game_type)) & (dfDifference.WhiteElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO])) &
+                               (dfDifference.BlackElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO]))][["Result", f"{piece}_difference"]]
+    #rename piece difference column into just difference
+    MaxImbalance = 0
+    if piece == 'pawn': MaxImbalance = 8
+    elif piece == 'knight' or piece == 'rook' or piece == 'bishop': MaxImbalance = 2
+    elif piece == 'queen': MaxImbalance = 1
+    Win = 0
+    if colour == 'white':
+        Win = '1-0'
+    elif colour == 'black':
+        Win = '0-1'
+    prev_percentage = None
+    allPercDifferences = 0
+    Result_Win_Rows = df_filtered[df_filtered.Result == Win].shape[0]
+    for imbalance in range(-MaxImbalance, MaxImbalance + 1):
+        percentage = df_filtered[(df_filtered.Result == Win) & (df_filtered[f"{piece}_difference"] == imbalance)].shape[0]/Result_Win_Rows*100
+        if prev_percentage is None:
+            prev_percentage = percentage
+        else:
+            curr_percentage = percentage
+            percDifference = abs(curr_percentage - prev_percentage)
+            prev_percentage = percentage
+            allPercDifferences += percDifference
+    return allPercDifferences / (MaxImbalance*2)
 
 #download_game_files()
 #SetDatabase(details).to_csv("imbalance.csv", index= False)
@@ -95,7 +130,17 @@ for game in gameGen:
     if game_length_half % 2 == 0: game_length_ply = game_length_half//2
     else: game_length_ply = game_length_half//2 + 1
     details = get_details_from_game(game,round(game_length_ply*0.6),6)
-    allDetails += details
-    if len(allDetails) % 1000 == 0: print("processed: ", len(allDetails))
+    allDetails += [details]
+    # if len(allDetails) > 100:
+    #     break
+    if len(allDetails) % 1000 == 0:
+        print("processed: ", len(allDetails))
 
-print(SetDatabase(allDetails))
+piece_types = ["pawn","knight", "bishop", "rook", "queen"]
+SetDatabase(allDetails)
+dfDifference = Piece_Imbalance(allDetails)
+for piece in piece_types:
+    print(piece)
+    for colour in ['white', 'black']:
+        print(colour)
+        print(PieceImbalanceValue(dfDifference,"Classical",colour,piece,[1400,1700]))
