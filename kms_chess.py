@@ -149,6 +149,11 @@ ELO_Range = [input("Enter the minimum ELO of a range: "), input("Enter the maxim
 # gameType = input("Choose game type from Classical, Bullet, Blitz and Correspondence: ")
 for piece in piece_types:
     print(piece)
+    Sum = 0
     for colour in ['white', 'black']:
         print(colour)
-        print(PieceImbalanceValue(dfDifference,"Classical",colour,piece,ELO_Range))
+        ImbalanceValue = PieceImbalanceValue(dfDifference,"Classical",colour,piece,ELO_Range)
+        print(ImbalanceValue)
+        Sum += ImbalanceValue
+    print("Average")
+    print(Sum/2)
