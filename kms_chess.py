@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+# Piece of code provided by mentor:
 
 PIECE_SYMBOLS = [chess.Piece.from_symbol(p) for p in "pnbrqPNBRQ"]
 
@@ -71,29 +72,35 @@ def games_generator(folder = "games"):
                     pgn = ""
                 pgn += line
 
+# Piece of code written:
+# Functions:
+# Setting up the database with all game details for "reliable" moves (i.e. moves, 6 moves after which no capture occurs)
+# Needed for result checking, functionally currently unimportant
 def SetDatabase(allDetails):
     DF = pandas.DataFrame(sum(allDetails, []), columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
-    # DF.to_csv("database13.csv", index= False)
-    #Piece_Imbalance(DF, details)
+    DF.to_csv("database13.csv", index= False)
     return DF
 
+# Filtering all the recorded moves to only final moves of a selected frame
+# Hence, calculating final imbalances for each piece type within a frame for each game
+# (where positive difference means that white has more pieces, and negative - black)
+# Recording it into the database containing final imbalances and details of each game:
 def Piece_Imbalance(allDetails):
     df = pandas.DataFrame([details[len(details)-1] for details in allDetails if len(details) > 0], columns=["Event", "Result", "WhiteElo", "BlackElo", "Site", "Move", "p", "n", "b", "r", "q", "P", "N", "B", "R", "Q"])
     piece_types = [("pawn", "p"), ("knight", "n"), ("bishop", "b"), ("rook", "r"), ("queen", "q")]
     for (piece_name, p) in piece_types:
         df[f"{piece_name}_difference"] = df[p.upper()] - df[p]
-    #OUTPUT = DF[DF.Move == (details[len(details)-1][5] for details in AllDetails)][[f"{p}_difference" for (p, _) in piece_types]]
     out = df[["Event", "Result", "WhiteElo", "BlackElo"]+[f"{p}_difference" for (p, _) in piece_types]]
     out.to_csv("database13_diff.csv", index=False)
     return out
 
+# Analysis function:
 def PieceImbalanceValue(dfDifference, game_type, colour, piece, ELO_range):
     MIN_ELO = 0
     MAX_ELO = 1
     # ELO_range indices
     df_filtered = dfDifference[(dfDifference.Event.str.contains(game_type)) & (dfDifference.WhiteElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO])) &
                                (dfDifference.BlackElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO]))][["Result", f"{piece}_difference"]]
-    #rename piece difference column into just difference
     MaxImbalance = 0
     if piece == 'pawn': MaxImbalance = 8
     elif piece == 'knight' or piece == 'rook' or piece == 'bishop': MaxImbalance = 2
@@ -117,11 +124,7 @@ def PieceImbalanceValue(dfDifference, game_type, colour, piece, ELO_range):
             allPercDifferences += percDifference
     return allPercDifferences / (MaxImbalance*2)
 
-#download_game_files()
-#SetDatabase(details).to_csv("imbalance.csv", index= False)
-#print(SetDatabase(details))
-
-
+# Main code:
 gameGen = games_generator()
 allDetails = []
 for game in gameGen:
@@ -136,11 +139,16 @@ for game in gameGen:
     if len(allDetails) % 1000 == 0:
         print("processed: ", len(allDetails))
 
+# Getting the results:
 piece_types = ["pawn","knight", "bishop", "rook", "queen"]
-SetDatabase(allDetails)
+# Decomment the following line if want to get the initial database (you might kill your computer):
+# SetDatabase(allDetails)
 dfDifference = Piece_Imbalance(allDetails)
+ELO_Range = [input("Enter the minimum ELO of a range: "), input("Enter the maximum ELO of a range: ")]
+# Decomment the following line in case the change of game type required and change "Classical" into gameType:
+# gameType = input("Choose game type from Classical, Bullet, Blitz and Correspondence: ")
 for piece in piece_types:
     print(piece)
     for colour in ['white', 'black']:
         print(colour)
-        print(PieceImbalanceValue(dfDifference,"Classical",colour,piece,[1400,1700]))
+        print(PieceImbalanceValue(dfDifference,"Classical",colour,piece,ELO_Range))
