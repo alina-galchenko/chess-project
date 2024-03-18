@@ -144,6 +144,7 @@ piece_types = ["pawn","knight", "bishop", "rook", "queen"]
 # Decomment the following line if want to get the initial database (you might kill your computer):
 # SetDatabase(allDetails)
 dfDifference = Piece_Imbalance(allDetails)
+# Decomment the following line if want to change rating range:
 # ELO_Range = [input("Enter the minimum ELO of a range: "), input("Enter the maximum ELO of a range: ")]
 # Decomment the following line in case the change of game type required and change "Classical" into gameType:
 # gameType = input("Choose game type from Classical, Bullet, Blitz and Correspondence: ")
