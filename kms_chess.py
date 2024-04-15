@@ -114,6 +114,8 @@ def PieceImbalanceValue(dfDifference, game_type, colour, piece, ELO_range):
     allPercDifferences = 0
     Result_Win_Rows = df_filtered[df_filtered.Result == Win].shape[0]
     for imbalance in range(-MaxImbalance, MaxImbalance + 1):
+        if Result_Win_Rows == 0:
+            continue
         percentage = df_filtered[(df_filtered.Result == Win) & (df_filtered[f"{piece}_difference"] == imbalance)].shape[0]/Result_Win_Rows*100
         if prev_percentage is None:
             prev_percentage = percentage
@@ -145,16 +147,27 @@ piece_types = ["pawn","knight", "bishop", "rook", "queen"]
 # SetDatabase(allDetails)
 dfDifference = Piece_Imbalance(allDetails)
 # Decomment the following line if want to change rating range:
-# ELO_Range = [input("Enter the minimum ELO of a range: "), input("Enter the maximum ELO of a range: ")]
+# ELO_Range = [int(input("Enter the minimum ELO of a range: ")), int(input("Enter the maximum ELO of a range: "))]
 # Decomment the following line in case the change of game type required and change "Classical" into gameType:
 # gameType = input("Choose game type from Classical, Bullet, Blitz and Correspondence: ")
-for piece in piece_types:
-    print(piece)
-    Sum = 0
-    for colour in ['white', 'black']:
-        print(colour)
-        ImbalanceValue = PieceImbalanceValue(dfDifference,"Classical",colour,piece,[1400,1700])
-        print(ImbalanceValue)
-        Sum += ImbalanceValue
-    print("Average")
-    print(Sum/2)
+
+MidgameData = []
+for GameType in ['Classical', 'Bullet', 'Blitz', 'Correspondence']:
+    ELO_Range = [700,1000]
+    print(GameType)
+    for RangeCount in range(6):
+        print(ELO_Range)
+        for piece in piece_types:
+            print(piece)
+            Sum = 0
+            for colour in ['white', 'black']:
+                ImbalanceValue = PieceImbalanceValue(dfDifference,"Classical",colour,piece,ELO_Range)
+                print(f"{colour}: {ImbalanceValue}")
+                MidgameData += [[GameType, f'{ELO_Range[0]}-{ELO_Range[1]}', piece, colour, ImbalanceValue]]
+                # Sum += ImbalanceValue
+            # Average = Sum/2
+            # print(f"Average: {Average}")
+        ELO_Range[0],ELO_Range[1] = ELO_Range[0]+300, ELO_Range[1]+300
+
+MidgameDF = pandas.DataFrame(MidgameData, columns=['Game type','Rating range','Piece','Colour','Value (%)'])
+MidgameDF.to_csv('AllMidgameData.csv', index=False)
