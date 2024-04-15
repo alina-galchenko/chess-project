@@ -1,7 +1,7 @@
 import chess
 import chess.pgn
 import bz2
-import sqlite3 #not used yet
+import sqlite3
 
 import pandas
 import requests
@@ -99,8 +99,12 @@ def PieceImbalanceValue(dfDifference, game_type, colour, piece, ELO_range):
     MIN_ELO = 0
     MAX_ELO = 1
     # ELO_range indices
-    df_filtered = dfDifference[(dfDifference.Event.str.contains(game_type)) & (dfDifference.WhiteElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO])) &
+    if ELO_range == [700,1000] or ELO_range == [2200,2500]:
+        df_filtered = dfDifference[(dfDifference.Event.str.contains(game_type)) & (dfDifference.WhiteElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO])) |
                                (dfDifference.BlackElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO]))][["Result", f"{piece}_difference"]]
+    else:
+        df_filtered = dfDifference[(dfDifference.Event.str.contains(game_type)) & (dfDifference.WhiteElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO])) &
+                                   (dfDifference.BlackElo.between(ELO_range[MIN_ELO], ELO_range[MAX_ELO]))][["Result", f"{piece}_difference"]]
     MaxImbalance = 0
     if piece == 'pawn': MaxImbalance = 8
     elif piece == 'knight' or piece == 'rook' or piece == 'bishop': MaxImbalance = 2
