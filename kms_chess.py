@@ -165,7 +165,7 @@ for GameType in ['Classical', 'Bullet', 'Blitz', 'Correspondence']:
             print(piece)
             Sum = 0
             for colour in ['white', 'black']:
-                ImbalanceValue = PieceImbalanceValue(dfDifference,"Classical",colour,piece,ELO_Range)
+                ImbalanceValue = PieceImbalanceValue(dfDifference,GameType,colour,piece,ELO_Range)
                 print(f"{colour}: {ImbalanceValue}")
                 MidgameData += [[GameType, f'{ELO_Range[0]}-{ELO_Range[1]}', piece, colour, ImbalanceValue]]
                 # Sum += ImbalanceValue
