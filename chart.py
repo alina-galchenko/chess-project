@@ -95,13 +95,23 @@ def Weghted(criterium):
     for piece in pieces:
         for i in range(len(criteria[criterium])):
             plt.plot(i + (0.25 if piece == "bishop" else 0),
-                    filtered[filtered["Piece"] == piece].values[0][2], ".", markersize = 5, marker = unicode_mappings[piece],
+                    filtered[filtered["Piece"] == piece].values[i][2], ".", markersize = 5, marker = unicode_mappings[piece],
                         color = color_mappings[piece])
+    ax = plt.subplot(111)
     plt.ylim(0, 14)
-    plt.title(f"Piece values by varying {criterium}s (weighted)")
+    plt.title("Piece values by player rating")
     plt.xlabel(criterium)
-    plt.ylabel("Piece value / pu")
+    plt.ylabel("Relative piece value")
     plt.xticks(list(range(len(criteria[criterium]))), criteria[criterium])
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 1, box.height])
+    pawn_patch = mpatches.Patch(color = "green", label = "Pawn")
+    knight_patch = mpatches.Patch(color = "purple", label = "Knight")
+    bishop_patch = mpatches.Patch(color = "red", label = "Bishop")
+    rook_patch = mpatches.Patch(color = "blue", label = "Rook")
+    queen_patch = mpatches.Patch(color = "black", label = "Queen")
+
+    ax.legend(handles = [pawn_patch, knight_patch, bishop_patch, rook_patch, queen_patch], loc='center left', bbox_to_anchor=(1, 0.5))
     print(default)
     plt.show()
 
